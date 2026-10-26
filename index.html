@@ -32,6 +32,35 @@
                 <span id="task-count">0 tareas pendientes</span>
             </div>
 
+            <!-- Calendario mensual -->
+<section class="calendar-section" aria-label="Calendario de tareas">
+    <div class="calendar-header">
+        <button type="button" id="prev-month" aria-label="Mes anterior">
+            &#10094;
+        </button>
+
+        <h3 id="calendar-title"></h3>
+
+        <button type="button" id="next-month" aria-label="Mes siguiente">
+            &#10095;
+        </button>
+    </div>
+
+    <p id="selected-date-label"></p>
+
+    <div class="calendar-weekdays" aria-hidden="true">
+        <span>Lun</span>
+        <span>Mar</span>
+        <span>Mié</span>
+        <span>Jue</span>
+        <span>Vie</span>
+        <span>Sáb</span>
+        <span>Dom</span>
+    </div>
+
+    <div id="calendar-grid" class="calendar-grid"></div>
+</section>
+
             <!-- Formulario para crear nuevas tareas -->
             <form id="task-form">
                 <label class="sr-only" for="task-input">
@@ -45,6 +74,17 @@
                     maxlength="120"
                     autocomplete="off"
                     required
+                >
+
+                <!-- Fecha opcional para organizar la tarea -->
+                <label for="task-date" class="sr-only">
+                    Fecha de la tarea (opcional)
+                </label>
+
+                <input
+                    type="date"
+                    id="task-date"
+                    aria-label="Fecha de la tarea (opcional)"
                 >
 
                 <button type="submit" id="add-button">

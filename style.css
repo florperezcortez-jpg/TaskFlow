@@ -401,3 +401,121 @@ button {
         font-size: 13px;
     }
 }
+/* ========================================
+   CALENDARIO MENSUAL
+   ======================================== */
+
+.calendar-section {
+    margin: 24px 0;
+    padding: 18px;
+    background: #17171f;
+    border: 1px solid #30303d;
+    border-radius: 14px;
+}
+
+.calendar-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.calendar-header h3 {
+    margin: 0;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.calendar-header button {
+    width: 38px;
+    height: 38px;
+    border: 1px solid #393949;
+    border-radius: 8px;
+    background: #242432;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+#selected-date-label {
+    color: #b9a4ff;
+    font-size: 0.9rem;
+    text-align: center;
+    margin-bottom: 16px;
+}
+
+.calendar-weekdays,
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, minmax(0, 1fr));
+    gap: 6px;
+}
+
+.calendar-weekdays {
+    margin-bottom: 8px;
+    text-align: center;
+    color: #aaaabb;
+    font-size: 0.8rem;
+}
+
+.calendar-day {
+    position: relative;
+    min-width: 0;
+    aspect-ratio: 1;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: #242432;
+    color: #ffffff;
+    cursor: pointer;
+}
+
+.calendar-day:hover {
+    border-color: #a78bfa;
+}
+
+.calendar-day.selected {
+    background: #8b5cf6;
+    color: #ffffff;
+}
+
+.calendar-day.today {
+    border-color: #a78bfa;
+}
+
+.calendar-day.has-tasks::after {
+    content: "";
+    position: absolute;
+    bottom: 4px;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #c4b5fd;
+    transform: translateX(-50%);
+}
+
+.calendar-day.selected.has-tasks::after {
+    background: #ffffff;
+}
+
+.task-date-label {
+    display: block;
+    margin-top: 4px;
+    color: #aaaabb;
+    font-size: 0.8rem;
+}
+
+@media (max-width: 480px) {
+    .calendar-section {
+        padding: 10px;
+    }
+
+    .calendar-weekdays,
+    .calendar-grid {
+        gap: 3px;
+    }
+
+    .calendar-day {
+        font-size: 0.85rem;
+    }
+}

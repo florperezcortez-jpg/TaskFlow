@@ -1,50 +1,77 @@
 
 /* ========================================
-   TASKFLOW - Gestor de tareas
+   TASKFLOW - Tareas y calendario
    ======================================== */
 
-// Buscamos los elementos HTML que vamos a utilizar.
-
+// Elementos HTML.
 const taskForm = document.querySelector("#task-form");
 const taskInput = document.querySelector("#task-input");
+const taskDateInput = document.querySelector("#task-date");
 const taskList = document.querySelector("#task-list");
 const taskCount = document.querySelector("#task-count");
 const emptyMessage = document.querySelector("#empty-message");
+
+const calendarTitle = document.querySelector("#calendar-title");
+const calendarGrid = document.querySelector("#calendar-grid");
+const selectedDateLabel = document.querySelector("#selected-date-label");
+const prevMonthButton = document.querySelector("#prev-month");
+const nextMonthButton = document.querySelector("#next-month");
 
 // ========================================
 // DATOS
 // ========================================
 
-// Array que contiene todas las tareas.
 let tasks = [];
-
-// Filtro que está seleccionado actualmente.
 let currentFilter = "all";
+
+// Convierte una fecha a formato YYYY-MM-DD usando la fecha local.
+function getLocalDateString(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+
+    return `${year}-${month}-${day}`;
+}
+
+const today = getLocalDateString(new Date());
+
+// Día seleccionado en el calendario.
+let selectedDate = today;
+
+// Mes mostrado en el calendario.
+let displayedMonth = new Date();
+displayedMonth.setDate(1);
 
 // ========================================
 // ALMACENAMIENTO LOCAL
 // ========================================
 
-// Guardamos las tareas en el navegador.
+// Guarda todas las tareas en el navegador.
 function saveTasks() {
     localStorage.setItem("taskflow-tasks", JSON.stringify(tasks));
 }
 
-// Recuperamos las tareas guardadas.
+// Recupera las tareas guardadas.
 function loadTasks() {
     const savedTasks = localStorage.getItem("taskflow-tasks");
 
-    if (savedTasks !== null) {
-        try {
-            const parsedTasks = JSON.parse(savedTasks);
+    if (savedTasks === null) return;
 
-            if (Array.isArray(parsedTasks)) {
-                tasks = parsedTasks;
-            }
-        } catch (error) {
-            console.error("Error al recuperar las tareas:", error);
-            tasks = [];
+    try {
+        const parsedTasks = JSON.parse(savedTasks);
+
+        if (Array.isArray(parsedTasks)) {
+            // Conserva las tareas antiguas que no tenían fecha.
+            tasks = parsedTasks.map(function (task) {
+                return {
+                    ...task,
+                    date: task.date || ""
+                };
+            });
         }
+    } catch (error) {
+        console.error("Error al recuperar las tareas:", error);
+        tasks = [];
     }
 }
 
@@ -53,37 +80,40 @@ function loadTasks() {
 // ========================================
 
 taskForm.addEventListener("submit", function (event) {
-
-    // Evitamos que el formulario recargue la página.
     event.preventDefault();
 
-    // Obtenemos el texto sin espacios sobrantes.
     const text = taskInput.value.trim();
 
-    // No permitimos tareas vacías.
-    if (text === "") {
-        return;
-    }
+    if (text === "") return;
 
-    // Creamos un objeto para la nueva tarea.
+    // Creamos la tarea con fecha opcional.
     const newTask = {
         id: Date.now(),
         text: text,
-        completed: false
+        completed: false,
+        date: taskDateInput.value
     };
 
-    // Añadimos la tarea al array.
     tasks.push(newTask);
 
-    // Guardamos los cambios.
+    // Si se asignó una fecha, seleccionamos ese día.
+    if (newTask.date) {
+        selectedDate = newTask.date;
+
+        const parts = selectedDate.split("-").map(Number);
+        displayedMonth = new Date(parts[0], parts[1] - 1, 1);
+    }
+
     saveTasks();
 
-    // Limpiamos el campo.
+    // Limpiamos los campos.
     taskInput.value = "";
-    taskInput.focus();
+    taskDateInput.value = "";
 
-    // Actualizamos la pantalla.
+    renderCalendar();
     renderTasks();
+
+    taskInput.focus();
 });
 
 // ========================================
@@ -91,13 +121,18 @@ taskForm.addEventListener("submit", function (event) {
 // ========================================
 
 function renderTasks() {
-
-    // Vaciamos la lista visual antes de dibujarla otra vez.
     taskList.innerHTML = "";
 
-    // Aplicamos el filtro seleccionado.
+    // Las tareas con fecha aparecen solo en su día.
+    // Las tareas sin fecha aparecen todos los días.
     const filteredTasks = tasks.filter(function (task) {
+        const matchesDate = !task.date || task.date === selectedDate;
 
+        if (!matchesDate) {
+            return false;
+        }
+
+        // Aplicamos el filtro seleccionado.
         if (currentFilter === "pending") {
             return !task.completed;
         }
@@ -109,9 +144,8 @@ function renderTasks() {
         return true;
     });
 
-    // Creamos los elementos de cada tarea visible.
+    // Creamos visualmente cada tarea.
     filteredTasks.forEach(function (task) {
-
         const li = document.createElement("li");
         li.classList.add("task-item");
 
@@ -126,6 +160,7 @@ function renderTasks() {
 
             saveTasks();
             renderTasks();
+            renderCalendar();
         });
 
         // Texto de la tarea.
@@ -136,41 +171,41 @@ function renderTasks() {
         if (task.completed) {
             span.classList.add("completed");
         }
-         // ========================================
-// BOTÓN PARA EDITAR LA TAREA
-// ========================================
 
-const editButton = document.createElement("button");
-editButton.type = "button";
-editButton.textContent = "Editar";
+        li.appendChild(checkbox);
+        li.appendChild(span);
 
-// Cuando hacemos clic, permitimos cambiar el texto.
-editButton.addEventListener("click", function () {
+        // Indicamos cuándo una tarea no tiene fecha.
+        if (!task.date) {
+            const dateLabel = document.createElement("small");
+            dateLabel.textContent = "Sin fecha";
+            dateLabel.classList.add("task-date-label");
+            li.appendChild(dateLabel);
+        }
 
-    // Pedimos el nuevo texto mediante una ventana del navegador.
-    const newText = prompt("Editar tarea:", task.text);
+        // Botón para editar el texto de la tarea.
+        const editButton = document.createElement("button");
+        editButton.type = "button";
+        editButton.textContent = "Editar";
 
-    // Si cancelamos, no hacemos ningún cambio.
-    if (newText === null) {
-        return;
-    }
+        editButton.addEventListener("click", function () {
+            const newText = prompt("Editar tarea:", task.text);
 
-    // Eliminamos los espacios sobrantes.
-    const editedText = newText.trim();
+            if (newText === null) return;
 
-    // No permitimos guardar una tarea vacía.
-    if (editedText === "") {
-        alert("La tarea no puede estar vacía.");
-        return;
-    }
+            const editedText = newText.trim();
 
-    // Actualizamos el texto de la tarea.
-    task.text = editedText;
+            if (editedText === "") {
+                alert("La tarea no puede estar vacía.");
+                return;
+            }
 
-    // Guardamos el cambio y actualizamos la pantalla.
-    saveTasks();
-    renderTasks();
-});
+            task.text = editedText;
+
+            saveTasks();
+            renderTasks();
+        });
+
         // Botón para eliminar la tarea.
         const deleteButton = document.createElement("button");
         deleteButton.type = "button";
@@ -178,27 +213,22 @@ editButton.addEventListener("click", function () {
         deleteButton.classList.add("delete-button");
 
         deleteButton.addEventListener("click", function () {
-
-            // Conservamos todas las tareas excepto la eliminada.
             tasks = tasks.filter(function (item) {
                 return item.id !== task.id;
             });
 
             saveTasks();
             renderTasks();
+            renderCalendar();
         });
 
-        // Incorporamos los elementos al <li>.
-        li.appendChild(checkbox);
-        li.appendChild(span);
         li.appendChild(editButton);
         li.appendChild(deleteButton);
 
-        // Añadimos la tarea a la lista del HTML.
         taskList.appendChild(li);
     });
 
-    // Calculamos el total de tareas pendientes.
+    // Contamos todas las tareas pendientes.
     const pendingCount = tasks.filter(function (task) {
         return !task.completed;
     }).length;
@@ -207,8 +237,16 @@ editButton.addEventListener("click", function () {
         ? "1 tarea pendiente"
         : pendingCount + " tareas pendientes";
 
-    // Mostramos el mensaje cuando no hay tareas visibles.
+    // Mensaje cuando no hay tareas para mostrar.
     emptyMessage.hidden = filteredTasks.length > 0;
+
+    if (filteredTasks.length === 0) {
+        emptyMessage.textContent =
+            "No hay tareas para este día. Podés agregar una o elegir otra fecha.";
+    } else {
+        emptyMessage.textContent =
+            "Todavía no hay tareas. Agregá la primera.";
+    }
 }
 
 // ========================================
@@ -218,13 +256,10 @@ editButton.addEventListener("click", function () {
 const filterButtons = document.querySelectorAll(".filter");
 
 filterButtons.forEach(function (button) {
-
     button.addEventListener("click", function () {
-
-        // Leemos el filtro definido en el HTML.
         currentFilter = button.dataset.filter;
 
-        // Actualizamos el estado visual de los botones.
+        // Actualizamos el botón activo.
         filterButtons.forEach(function (filterButton) {
             const isActive = filterButton === button;
 
@@ -232,15 +267,123 @@ filterButtons.forEach(function (button) {
             filterButton.setAttribute("aria-pressed", isActive);
         });
 
-        // Dibujamos las tareas que corresponden al filtro.
         renderTasks();
     });
+});
+
+// ========================================
+// CALENDARIO MENSUAL
+// ========================================
+
+function renderCalendar() {
+    calendarGrid.innerHTML = "";
+
+    // Mostramos el mes y el año.
+    const monthName = displayedMonth.toLocaleDateString("es-AR", {
+        month: "long",
+        year: "numeric"
+    });
+
+    calendarTitle.textContent =
+        monthName.charAt(0).toUpperCase() + monthName.slice(1);
+
+    // Mostramos la fecha seleccionada.
+    const selectedParts = selectedDate.split("-").map(Number);
+
+    const selectedDateObject = new Date(
+        selectedParts[0],
+        selectedParts[1] - 1,
+        selectedParts[2]
+    );
+
+    selectedDateLabel.textContent =
+        "Tareas del " + selectedDateObject.toLocaleDateString("es-AR", {
+            day: "numeric",
+            month: "long",
+            year: "numeric"
+        });
+
+    const year = displayedMonth.getFullYear();
+    const month = displayedMonth.getMonth();
+
+    // Calculamos el día de la semana en que comienza el mes.
+    // La semana empieza el lunes.
+    const firstWeekday = new Date(year, month, 1).getDay();
+    const startingOffset = (firstWeekday + 6) % 7;
+
+    // Calculamos cuántos días tiene el mes.
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    // Añadimos espacios antes del primer día.
+    for (let i = 0; i < startingOffset; i++) {
+        const emptyCell = document.createElement("span");
+        emptyCell.setAttribute("aria-hidden", "true");
+        calendarGrid.appendChild(emptyCell);
+    }
+
+    // Creamos un botón para cada día.
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dateString = getLocalDateString(
+            new Date(year, month, day)
+        );
+
+        const dayButton = document.createElement("button");
+        dayButton.type = "button";
+        dayButton.textContent = day;
+        dayButton.classList.add("calendar-day");
+
+        // Destacamos el día seleccionado.
+        const isSelected = dateString === selectedDate;
+
+        if (isSelected) {
+            dayButton.classList.add("selected");
+        }
+
+        dayButton.setAttribute("aria-pressed", String(isSelected));
+
+        // Destacamos la fecha actual.
+        if (dateString === today) {
+            dayButton.classList.add("today");
+        }
+
+        // Marcamos los días que tienen tareas con fecha.
+        const hasTasks = tasks.some(function (task) {
+            return task.date === dateString;
+        });
+
+        if (hasTasks) {
+            dayButton.classList.add("has-tasks");
+        }
+
+        // Al elegir un día, actualizamos calendario y lista.
+        dayButton.addEventListener("click", function () {
+            selectedDate = dateString;
+
+            renderCalendar();
+            renderTasks();
+        });
+
+        calendarGrid.appendChild(dayButton);
+    }
+}
+
+// Botón para ir al mes anterior.
+prevMonthButton.addEventListener("click", function () {
+    displayedMonth.setMonth(displayedMonth.getMonth() - 1);
+    renderCalendar();
+});
+
+// Botón para ir al mes siguiente.
+nextMonthButton.addEventListener("click", function () {
+    displayedMonth.setMonth(displayedMonth.getMonth() + 1);
+    renderCalendar();
 });
 
 // ========================================
 // INICIALIZACIÓN
 // ========================================
 
-// Recuperamos los datos antes de dibujar la lista.
+// Recuperamos las tareas antes de mostrarlas.
 loadTasks();
+renderCalendar();
 renderTasks();
