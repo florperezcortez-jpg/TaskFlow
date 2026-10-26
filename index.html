@@ -1,0 +1,87 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta name="description" content="TaskFlow, un gestor de tareas simple y minimalista.">
+
+    <title>TaskFlow | Gestor de tareas</title>
+
+    <!-- Conectamos nuestra hoja de estilos -->
+    <link rel="stylesheet" href="style.css">
+
+    <!-- defer hace que el JS se ejecute después de analizar el HTML -->
+    <script src="script.js" defer></script>
+</head>
+<body>
+
+    <main class="app">
+        <header class="app-header">
+            <div>
+                <p class="eyebrow">ORGANIZACIÓN PERSONAL</p>
+                <h1>TaskFlow<span>.</span></h1>
+                <p class="subtitle">Un paso a la vez.</p>
+            </div>
+        </header>
+
+        <section class="task-section" aria-labelledby="tasks-title">
+            <div class="section-heading">
+                <h2 id="tasks-title">Mis tareas</h2>
+                <span id="task-count">0 tareas pendientes</span>
+            </div>
+
+            <!-- Formulario para crear nuevas tareas -->
+            <form id="task-form">
+                <label class="sr-only" for="task-input">
+                    Nueva tarea
+                </label>
+
+                <input
+                    type="text"
+                    id="task-input"
+                    placeholder="¿Qué necesitás hacer?"
+                    maxlength="120"
+                    autocomplete="off"
+                    required
+                >
+
+                <button type="submit" id="add-button">
+                    Agregar
+                </button>
+            </form>
+
+            <!-- Filtros de tareas -->
+            <nav class="filters" aria-label="Filtrar tareas">
+                <button type="button" class="filter active"
+                    data-filter="all" aria-pressed="true">
+                    Todas
+                </button>
+
+                <button type="button" class="filter"
+                    data-filter="pending" aria-pressed="false">
+                    Pendientes
+                </button>
+
+                <button type="button" class="filter"
+                    data-filter="completed" aria-pressed="false">
+                    Completadas
+                </button>
+            </nav>
+
+            <!-- JavaScript insertará las tareas acá -->
+            <ul id="task-list" aria-label="Lista de tareas"></ul>
+
+            <p id="empty-message">
+                Todavía no hay tareas. Agregá la primera.
+            </p>
+        </section>
+
+        <footer class="app-footer">
+            <p>TaskFlow · Proyecto de portfolio</p>
+        </footer>
+    </main>
+
+</body>
+</html>
