@@ -387,3 +387,41 @@ nextMonthButton.addEventListener("click", function () {
 loadTasks();
 renderCalendar();
 renderTasks();
+
+
+// ---------- Modo claro y oscuro ----------
+
+// Buscamos el botón del tema.
+const themeToggle = document.querySelector("#theme-toggle");
+
+// Recuperamos el tema guardado o usamos el modo oscuro por defecto.
+const savedTheme = localStorage.getItem("taskflow-theme") || "dark";
+
+// Aplicamos el tema al documento.
+function applyTheme(theme) {
+    document.documentElement.dataset.theme = theme;
+
+    // Actualizamos el texto y la etiqueta accesible del botón.
+    if (theme === "light") {
+        themeToggle.textContent = "🌙 Modo oscuro";
+        themeToggle.setAttribute("aria-label", "Activar modo oscuro");
+    } else {
+        themeToggle.textContent = "☀️ Modo claro";
+        themeToggle.setAttribute("aria-label", "Activar modo claro");
+    }
+
+    // Guardamos la elección para la próxima visita.
+    localStorage.setItem("taskflow-theme", theme);
+}
+
+// Aplicamos el tema guardado al abrir la página.
+applyTheme(savedTheme);
+
+// Cambiamos de tema cuando se presiona el botón.
+themeToggle.addEventListener("click", () => {
+    const currentTheme = document.documentElement.dataset.theme;
+
+    const newTheme = currentTheme === "dark" ? "light" : "dark";
+
+    applyTheme(newTheme);
+});
